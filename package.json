@@ -1,0 +1,22 @@
+{
+  "name": "fish-phantom",
+  "version": "0.1.0",
+  "description": "Framework for working with phantomJS",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/misterfish/fish-phantom.git"
+  },
+  "author": {
+    "name": "Allen Haim",
+    "email": "allen@netherrealm.net"
+  },
+  "license": "GPL-2.0",
+  "dependencies": {
+    "fish-lib-node": "git://github.com/misterfish/fish-lib-node.git",
+    "prelude-ls": "^1.1.2"
+  },
+  "devDependencies": {
+    "livescript": "^1.4.0"
+  }
+}
