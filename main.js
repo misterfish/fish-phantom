@@ -29,7 +29,7 @@
   };
   our.page.onError = function(msg, trace){
     var msgStack;
-    msgStack = [sprintf('%s %s', brightRed(bullet()), msg)];
+    msgStack = [sprintf('%s JavaScript error: %s', brightRed(bullet()), msg)];
     if (trace && trace.length) {
       trace.forEach(function(it){
         var func;
@@ -43,7 +43,7 @@
     }
   };
   function init(arg$, done){
-    var url, namespaceName, simpleConfig, ref$;
+    var url, namespaceName, simpleConfig, ref$, tick;
     url = arg$.url, namespaceName = arg$.namespaceName, simpleConfig = (ref$ = arg$.simpleConfig) != null
       ? ref$
       : {};
@@ -53,15 +53,33 @@
     if (namespaceName == null) {
       return warn('Need namespace-name');
     }
+    tick = function(){
+      var n, first;
+      n = 2;
+      first = true;
+      return setInterval(function(){
+        var up;
+        n = n + 1;
+        if (first) {
+          first = false;
+          up = '';
+        } else {
+          up = escapeUp();
+        }
+        return log((up + "Waiting for initial page to load ") + repeatString$('.', n));
+      }, 1000);
+    }();
     return our.page.open(url, function(status){
       var err;
       info('status', status);
       if (status !== 'success') {
         err = "Couldn't browse to first page: status was " + brightRed(status);
+        clearInterval(tick);
         done({
           err: err
         });
       }
+      clearInterval(tick);
       info('calling init window');
       return initWindow({
         namespaceName: namespaceName,
@@ -70,7 +88,7 @@
     });
   }
   function conditionWait(sandboxFunction, arg$){
-    var ref$, msgStr, params, ref1$, checkInterval, noProgress, timeoutSoft, timeoutSoftMsg, timeoutSoftPrint, timeout, sandboxFunctionParams, timeoutSoftFunc;
+    var ref$, msgStr, params, ref1$, checkInterval, noProgress, timeoutSoft, timeoutSoftMsg, timeoutSoftPrint, timeout, sandboxFunctionParams, timeoutSoftFunc, timeoutHardFunc;
     ref$ = arg$ != null
       ? arg$
       : {}, msgStr = ref$.msgStr, params = (ref1$ = ref$.params) != null
@@ -86,23 +104,16 @@
     if (!isPositiveInt(checkInterval)) {
       return iwarn('condition-wait: bad check-interval');
     }
-    timeoutSoftFunc = !timeoutSoft
-      ? function(){}
-      : function(){
-        var n, m, msg;
-        n = 0;
-        m = timeoutSoft / checkInterval;
-        msg = timeoutSoftMsg != null ? timeoutSoftMsg : '<soft timeout>';
-        return function(){
-          n = (n + 1) % m;
-          if (!n) {
-            warn(msg);
-            if (timeoutSoftPrint) {
-              return our.page.render(sprintf('%s.pdf', timestamp()));
-            }
-          }
-        };
-      }();
+    timeoutSoftFunc = conditionWaitTimeout('soft', {
+      checkInterval: checkInterval,
+      duration: timeoutSoft,
+      msg: timeoutSoftMsg,
+      print: timeoutSoftPrint
+    });
+    timeoutHardFunc = conditionWaitTimeout('hard', {
+      checkInterval: checkInterval,
+      duration: timeout
+    });
     return function(data, done){
       var n, first, spin, job;
       n = 0;
@@ -114,6 +125,12 @@
       return job = setInterval(function(){
         var found, spinner, msg, first;
         timeoutSoftFunc();
+        if (timeoutHardFunc()) {
+          clearInterval(job);
+          return done({
+            err: 'timeout'
+          });
+        }
         found = evaluateJavascript(sandboxFunctionParams, sandboxFunction);
         spinner = spin();
         msg = isFunction(msgStr) ? msgStr() : msg;
@@ -142,6 +159,39 @@
         });
       }, checkInterval);
     };
+  }
+  function conditionWaitTimeout(type, arg$){
+    var ref$, checkInterval, duration, msg, print;
+    ref$ = arg$ != null
+      ? arg$
+      : {}, checkInterval = ref$.checkInterval, duration = ref$.duration, msg = ref$.msg, print = ref$.print;
+    if (checkInterval == null) {
+      return iwarn('need check-interval');
+    }
+    if (duration == null) {
+      return function(){};
+    }
+    return function(){
+      var n, m, msg;
+      n = 0;
+      m = duration / checkInterval;
+      msg = void 8;
+      if (type === 'soft') {
+        msg = typeof timeoutSoftMsg != 'undefined' && timeoutSoftMsg !== null ? timeoutSoftMsg : '<soft timeout>';
+      } else {
+        msg = 'timeout';
+      }
+      return function(){
+        n = (n + 1) % m;
+        if (!n) {
+          warn(msg);
+          if (print) {
+            our.page.render(sprintf('%s.pdf', timestamp()));
+          }
+          return true;
+        }
+      };
+    }();
   }
   function initWindow(arg$, done){
     var namespaceName, simpleConfig, ref$, ok;

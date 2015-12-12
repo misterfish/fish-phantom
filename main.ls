@@ -33,7 +33,7 @@ our.page.on-initialized = ->
 
 # --- called on evaluated javascript errors.
 our.page.on-error = (msg, trace) ->
-    msg-stack = [sprintf '%s %s', (bright-red bullet()), msg]
+    msg-stack = [sprintf '%s JavaScript error: %s', (bright-red bullet()), msg]
     if trace and trace.length
         trace.for-each ->
             func = if it.function
@@ -50,13 +50,30 @@ function init { url, namespace-name, simple-config = {} }, done
     return warn 'Need url' unless url?
     return warn 'Need namespace-name' unless namespace-name?
 
+    tick = do ->
+        n = 2
+        first = true
+        set-interval do
+            ->
+                # can eat other output, e.g. 'page initialised' XX
+                n := n + 1
+                if first
+                    first := false
+                    up = ''
+                else
+                    up = escape-up()
+                log "#{up}Waiting for initial page to load " + '.' * n
+            1000
+
     # --- note that you can only use page.open once.
     our.page.open url, (status) ->
         info 'status' status
         if status is not 'success'
             err = "Couldn't browse to first page: status was " + bright-red status
+            clear-interval tick
             done err: err
 
+        clear-interval tick
         info 'calling init window'
         init-window { namespace-name, simple-config }, done
 
@@ -94,18 +111,16 @@ function condition-wait sandbox-function, {
 
     return iwarn 'condition-wait: bad check-interval' unless is-positive-int check-interval
 
-    timeout-soft-func = if not timeout-soft
-        then -> # noop
-        else do ->
-            n = 0
-            m = timeout-soft / check-interval
-            msg = timeout-soft-msg ? '<soft timeout>'
-            ->
-                n := (n + 1) % m
-                if not n
-                    warn msg
-                    if timeout-soft-print
-                        our.page.render sprintf '%s.pdf' timestamp()
+    # returns noop if no timeout duration specified
+    timeout-soft-func = condition-wait-timeout 'soft',
+        check-interval: check-interval
+        duration: timeout-soft
+        msg: timeout-soft-msg
+        print: timeout-soft-print
+
+    timeout-hard-func = condition-wait-timeout 'hard',
+        check-interval: check-interval
+        duration: timeout
 
     (data, done) ->
         n = 0
@@ -115,6 +130,9 @@ function condition-wait sandbox-function, {
         job = set-interval do
             ->
                 timeout-soft-func()
+                if timeout-hard-func()
+                    clear-interval job
+                    return done err: 'timeout'
 
                 found = evaluate-javascript do
                     sandbox-function-params
@@ -147,6 +165,28 @@ function condition-wait sandbox-function, {
 
                 done data: found
             check-interval
+
+function condition-wait-timeout type, { check-interval, duration, msg, print } = {}
+    return iwarn 'need check-interval' unless check-interval?
+    return (->) unless duration? # noop
+
+    do ->
+        n = 0
+        m = duration / check-interval
+        msg = void
+        if type is 'soft'
+            msg = timeout-soft-msg ? '<soft timeout>'
+        else
+            msg = 'timeout'
+
+        # timeout func, returns true if timed out
+        ->
+            n := (n + 1) % m
+            if not n
+                warn msg
+                if print
+                    our.page.render sprintf '%s.pdf' timestamp()
+                return true
 
 function init-window { namespace-name, simple-config = {} }, done
     done err: 'need namespace-name' unless namespace-name?
@@ -229,6 +269,8 @@ function phantom-mock
     path: {}
     process:
         stdin: void # not currently necessary to mock
+        # --- write methods include a '\n' -- doesn't seem to be easy to
+        # avoid.
         stdout:
             write: -> console.log.apply console, arguments
         stderr:
