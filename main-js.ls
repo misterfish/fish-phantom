@@ -6,6 +6,9 @@
     note that they exist within the javascript sandbox and can't access
     outside variables.
 
+    and do remember to call them inside of page.evaluate() (or our
+    evaluate-javascript()).
+
     it's recommended to follow the convention of ending sandboxed function
     names with -js as a reminder of this.
 

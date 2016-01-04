@@ -6,5 +6,6 @@ export
     run-tape: main.run-tape
     condition-wait: main.condition-wait
     init: main.init
+    init-window: main.init-window
 
     init-js: main-js.init-js

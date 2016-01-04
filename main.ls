@@ -19,6 +19,7 @@ export
     evaluate-javascript
     run-tape
     condition-wait
+    init-window
     init
 
 # --- necessary to log from within evaluate-javascript
@@ -82,13 +83,13 @@ function init { url, namespace-name, simple-config = {} }, done
 #
 # opts.params: an array of positional parameters to pass.
 # opts.no-progress: don't print progress info to the console.
-# opts.timeout-soft = n: print a warning every n milliseconds that things
-#   are taking too long
-# opts.timeout-soft-msg: the soft timeout warning.
-# opts.timeout-soft-print: true to print a pdf each time timeout soft is
-#   reached.
 # opts.timeout = n: give up and return after n milliseconds.
-# opts.check-interval = n: check every n milliseconds.
+# opts.timeout-soft = n: print a warning every n milliseconds.
+# opts.timeout-soft-msg, opts.timeout-msg: the timeout warning.
+# opts.timeout-soft-print, opts.timeout-print: true to print a pdf each time
+#   timeout occurs.
+# opts.check-interval = n: check the condition every n milliseconds (default
+#   100).
 
 function condition-wait sandbox-function, {
     msg-str,
@@ -99,6 +100,8 @@ function condition-wait sandbox-function, {
     timeout-soft-msg,
     timeout-soft-print,
     timeout,
+    timeout-msg,
+    timeout-print,
 } = {}
 
     sandbox-function-params = map do
@@ -121,6 +124,8 @@ function condition-wait sandbox-function, {
     timeout-hard-func = condition-wait-timeout 'hard',
         check-interval: check-interval
         duration: timeout
+        msg: timeout-msg
+        print: timeout-print
 
     (data, done) ->
         n = 0
