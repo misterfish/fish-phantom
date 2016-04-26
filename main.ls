@@ -8,7 +8,7 @@ main-js = require './main-js'
 
 { map, each, join, } = prelude-ls = require 'prelude-ls'
 
-{ log, info, bullet, iwarn, warn, error, array, is-array, sprintf, yellow, magenta, bright-red, green, is-positive-int, } = fish-lib-node = require 'fish-lib-node'
+{ log, info, bullet, iwarn, warn, error, array, is-array, sprintf, yellow, magenta, bright-red, green, is-positive-int, } = fish-lib = require 'fish-lib'
 
 our =
     page: require 'webpage' .create()
