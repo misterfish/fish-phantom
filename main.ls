@@ -8,7 +8,7 @@ main-js = require './main-js'
 
 { map, each, join, } = prelude-ls = require 'prelude-ls'
 
-{ log, info, bullet, iwarn, warn, error, array, is-array, sprintf, yellow, magenta, bright-red, green, is-positive-int, } = fish-lib = require 'fish-lib'
+{ log, info, bullet, iwarn, warn, error, array, is-array, sprintf, yellow, magenta, bright-red, green, is-integer-positive, } = fish-lib = require 'fish-lib'
 
 our =
     page: require 'webpage' .create()
@@ -112,7 +112,7 @@ function condition-wait sandbox-function, {
                 else it
         params
 
-    return iwarn 'condition-wait: bad check-interval' unless is-positive-int check-interval
+    return iwarn 'condition-wait: bad check-interval' unless is-integer-positive check-interval
 
     # returns noop if no timeout duration specified
     timeout-soft-func = condition-wait-timeout 'soft',
