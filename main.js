@@ -42,8 +42,8 @@ our.page.onError = function(msg, trace){
   }
 };
 function init(arg$, done){
-  var url, namespaceName, simpleConfig, ref$, tick;
-  url = arg$.url, namespaceName = arg$.namespaceName, simpleConfig = (ref$ = arg$.simpleConfig) != null
+  var url, namespaceName, userAgent, simpleConfig, ref$, that, tick;
+  url = arg$.url, namespaceName = arg$.namespaceName, userAgent = arg$.userAgent, simpleConfig = (ref$ = arg$.simpleConfig) != null
     ? ref$
     : {};
   if (url == null) {
@@ -51,6 +51,9 @@ function init(arg$, done){
   }
   if (namespaceName == null) {
     return warn('Need namespace-name');
+  }
+  if ((that = userAgent) != null) {
+    our.page.settings.userAgent = that;
   }
   tick = function(){
     var n, first;
@@ -134,9 +137,9 @@ function conditionWait(sandboxFunction, arg$){
       }
       found = evaluateJavascript(sandboxFunctionParams, sandboxFunction);
       spinner = spin();
-      msg = isFunction(msgStr) ? msgStr() : msg;
+      msg = isFunction(msgStr) ? msgStr() : msgStr;
       if (!noProgress) {
-        log(sprintf('%swaiting for page %s %s', first
+        log(sprintf('%swaiting for condition %s %s', first
           ? ''
           : escapeUp(), yellow(msg), spinner));
       }

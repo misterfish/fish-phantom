@@ -47,9 +47,11 @@ our.page.on-error = (msg, trace) ->
 
 # --- function for initial page open
 
-function init { url, namespace-name, simple-config = {} }, done
+function init { url, namespace-name, user-agent, simple-config = {} }, done
     return warn 'Need url' unless url?
     return warn 'Need namespace-name' unless namespace-name?
+
+    our.page.settings.user-agent = that if user-agent?
 
     tick = do ->
         n = 2
@@ -147,10 +149,10 @@ function condition-wait sandbox-function, {
 
                 msg = if is-function msg-str
                     then msg-str()
-                    else msg
+                    else msg-str
 
                 if not no-progress
-                    log sprintf '%swaiting for page %s %s' (if first then '' else escape-up()), (yellow msg), spinner
+                    log sprintf '%swaiting for condition %s %s' (if first then '' else escape-up()), (yellow msg), spinner
 
                 first = false
 
