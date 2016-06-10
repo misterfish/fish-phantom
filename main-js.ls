@@ -65,8 +65,6 @@ module.exports = {
     init-js
 }
 
-# {} = fish-lib-node = require 'fish-lib-node'
-
 # --- init the javascript environment with a window.<namespace-name>
 # namespace. 
 #
